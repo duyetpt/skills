@@ -1,0 +1,14 @@
+interface:
+  display_name: Measure Software Simplicity
+  short_description: Measure software simplicity with evidence
+  default_prompt: Use $measure-software-simplicity to assess this codebase and produce
+    an evidence-based simplicity report.
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  products:
+  - chatgpt
+  - codex
+  - api
+  - atlas
+  allow_implicit_invocation: true
