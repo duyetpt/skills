@@ -1,6 +1,6 @@
 ---
 name: measure-software-simplicity
-description: Measure and report how well a design, pull request, module, service, refactor, or repository follows software-simplicity principles such as Single Responsibility, deep modules, single knowledge ownership, low change amplification, low caller burden, valid-state design, actionable failures, controlled scope, and evidence-based performance work. Use for architecture assessments, code reviews, maintainability audits, refactoring baselines, before-and-after comparisons, and engineering quality reports.
+description: Measure and report how well a design, pull request, module, service, refactor, or repository.
 ---
 
 # Measure Software Simplicity
