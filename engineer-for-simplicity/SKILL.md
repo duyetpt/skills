@@ -5,34 +5,19 @@ description: Design, implement, refactor, debug, optimize, and review backend co
 
 ## Engineering principles
 
-* Enforce Single Responsibility at component, module, class, and function levels. Each unit should own one cohesive policy, body of knowledge, or set of invariants.
-* Prefer deep modules with small interfaces and substantial capability.
-* Avoid unnecessary layers, thin wrappers, pass-through delegation, and speculative abstractions.
-* Assign every design fact, business rule, and invariant to one authoritative owner.
-* Hide storage, protocol, retry, ordering, formatting, and recovery details from callers that do not need them.
-* Pull reusable mechanical complexity downward while keeping business policy in higher-level domain code.
-* Eliminate invalid states and unnecessary special cases by design.
-* Fail fast when invariants are broken and expose only actionable failures.
-* Use precise names and document contracts, intent, invariants, and non-obvious decisions.
-* Preserve established conventions unless changing them clearly reduces overall complexity.
+* Enforce Single Responsibility and assign every rule, invariant, and design decision to one authoritative owner.
+* Prefer deep modules with small interfaces, meaningful capability, and hidden implementation complexity.
+* Avoid unnecessary layers, pass-through delegation, thin wrappers, speculative abstractions, and invalid states.
+* Keep reusable mechanics in lower layers, domain policies in higher layers, and expose only actionable failures.
+* Use precise names, document non-obvious contracts and decisions, and preserve conventions unless change clearly reduces overall complexity.
 
 ## Implement
 
-- Make the smallest coherent change, prefer framework or system capacities, solutions first before custome.
-- prefer simple mvc model and patterns.
-- separate package for specific functions as scheduled jobs.
-- always use Liquibase with sql for db migrations.
+- Make the smallest coherent change, prefer framework capabilities over custom solutions, and use simple MVC patterns.
+- Separate package for specific functions as scheduled jobs.
+- Always use Liquibase with sql for db migrations.
+- Use an `exposeErrorDetails` flag to control error responses. If enabled, return the specific error code, operation, and field; otherwise return a generic security-safe error. Always propagate trace context and correlation ID across services, log diagnostics internally, and disable error details by default in production.
 
 # Verify
 
-- Pass test for specific change.
-- Pass test for whole project.
-
-Evaluate the final design and code with `$measure-software-simplicity`. Cite evidence for every score and enforce this gate:
-
-* Every applicable principle must score at least `2`.
-* Single Responsibility must score `3`.
-* Every `N/A` must include a reason.
-* `Unknown` does not pass the gate.
-
-If the task authorizes changes and any gate fails, fix the findings within the approved scope, rerun validation, and reassess.
+Pass tests for both the specific change and the whole project. Evaluate the final design and code with `$measure-software-simplicity`, citing every score; require all applicable principles ≥2, Single Responsibility =3, justified `N/A`, and no `Unknown`. If authorized changes fail the gate, fix them within scope, rerun validation, and reassess.
