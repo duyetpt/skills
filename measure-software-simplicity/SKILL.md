@@ -1,141 +1,140 @@
 ---
 name: measure-software-simplicity
-description: Measure and report how well a design, pull request, module, service, refactor, or repository.
+description: Evaluate a diff, component, service, or repository using measurable evidence. Metrics support judgment; they do not replace it.
 ---
-
-# Measure Software Simplicity
-
-Assess simplicity with Goal-Question-Metric (GQM), repository evidence, and a calibrated scorecard. Treat measurements as decision support, not as a universal quality number.
 
 ## Rules
 
-- Define the assessment scope, baseline, and representative change scenarios before scoring.
-- Cite evidence for every score and finding. Mark missing evidence as `Unknown`; never invent it.
-- Use static metrics as warning signals, not verdicts. LOC, method count, complexity, coupling, or cohesion alone cannot prove a responsibility or design problem.
-- Measure trends within the same system and comparable scope. Do not compare raw scores across unrelated projects.
-- Separate measurement, interpretation, and recommendation. Do not change code unless the user separately requests implementation.
-- Report in the user's language unless they request otherwise.
+* Define scope and representative change scenarios before scoring.
+* Cite evidence for every score.
+* Use `Unknown` when evidence is insufficient; never guess.
+* Use `N/A` only with a reason.
+* Do not infer design quality from LOC or complexity alone.
+* Do not modify code unless explicitly requested.
+* Compare trends only within comparable scopes.
+* For every assessed class/interface, record its purpose, owned responsibilities/invariants, and non-responsibilities as the responsibility baseline.
+* On future assessments, compare implementation against this baseline; responsibility drift lowers the Single Responsibility score and requires human review.
+* Never auto-update the responsibility baseline to match changed code.
 
 ## Workflow
 
-### 1. Frame the assessment
+### 1. Define scope
 
 Record:
 
-- target artifact and revision or time window;
-- included and excluded paths, components, and behaviors;
-- intended behavior, constraints, and compatibility boundaries;
-- assessment type: `diff`, `component`, `repository`, or `before-after`;
-- three to five representative change scenarios for a component or repository assessment. A focused diff may use its single stated change;
-- principles that are applicable, not applicable, or currently unmeasurable.
-
-Choose scenarios from requirements, recent change history, incidents, or critical domain operations. Do not cherry-pick only easy changes.
+* assessment type: `diff | component | repository | before-after`
+* included/excluded paths
+* revision or time window
+* intended behavior and constraints
+* `1` scenario for a focused diff, otherwise `3–5` representative change scenarios
 
 ### 2. Collect evidence
 
-Prefer evidence in this order:
+Prefer:
 
-1. contracts, schemas, repository instructions, architecture records, and tests;
-2. source structure, public interfaces, dependency direction, and call sites;
-3. version history, co-change patterns, review history, and representative diffs;
-4. runtime failures, incidents, benchmarks, and profiling data;
-5. reviewer inference, explicitly labeled as inference.
+1. contracts, schemas, tests, ADRs
+2. source, interfaces, dependencies, call sites
+3. commits, PRs, co-change history
+4. incidents, benchmarks, runtime evidence
+5. reviewer inference
 
-Reference source as `path:line`, history by commit or PR, and runtime evidence by test, benchmark, or report name. For a large scope, disclose the sampling method and unsampled areas. Use existing repository analysis tools; do not add dependencies merely to manufacture a score.
+Reference evidence as `path:line`, commit/PR, test, benchmark, or report.
 
-### 3. Measure the principles
+### 3. Measure
 
-Use the following default GQM catalog. Adapt the measures when the domain has stronger evidence, but preserve the stated goal.
+| Principle                | Countable measures                                                                                          |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------- |
+| Single Responsibility    | responsibility-baseline drift; independent change drivers; unrelated responsibilities; unrelated co-changes |
+| Deep Modules             | public operations; exposed types; caller preconditions; exposed failure types; pass-through ratio           |
+| Single Knowledge Owner   | duplicated rule implementations; files/modules changed per scenario                                         |
+| Pull Complexity Downward | callers duplicating retry, mapping, ordering, formatting, recovery, or protocol logic                       |
+| Valid States & Failures  | invalid construction paths; unenforced invariants; non-actionable failure categories                        |
+| Names & Contracts        | conflicting terms; undocumented public contracts/invariants                                                 |
+| Conventions & Scope      | convention deviations; unrelated changes; speculative abstractions without consumers                        |
 
-| Principle | Questions | Default measures |
-| --- | --- | --- |
-| Single Responsibility | Does the unit own one cohesive policy, body of knowledge, or invariant set? What independent actors or policies make it change? | Distinct change-driver count; unrelated co-change evidence; cohesion and dependency evidence. Never infer SRP from size alone. |
-| Deep Modules | Does substantial capability sit behind a small interface? What must each caller know? | Interface Burden Profile `(public operations, exposed types, mandatory preconditions, exposed failure categories)`; pass-through ratio `delegating public operations / public operations`; caller knowledge count. |
-| Single Knowledge Owner | Is each design fact or business rule defined in one authoritative place? | Duplicate Rule Count `sum(max(0, independent implementations - 1))`; rule-owner map; Change Amplification `(production files, modules)` per representative scenario, reported as values plus median and range. |
-| Design Boundaries Twice | Were material boundaries compared using credible alternatives and explicit trade-offs? | Alternative coverage `material decisions with at least two credible options / material decisions`; trade-off coverage for cohesion, interface size, dependencies, testability, failure containment, compatibility, and measured performance. |
-| Pull Complexity Downward | Is shared mechanical complexity handled once below callers while business policy stays above? | Repeated caller-policy count; call sites duplicating retry, ordering, mapping, formatting, or recovery; caller branches and preconditions removed or introduced. |
-| Valid States and Failures | Are invalid states prevented, invariants enforced early, and exposed failures actionable? | Invalid construction paths; invariant enforcement coverage `invariants enforced at a boundary / scoped invariants`; actionable failure ratio `failures with a documented caller action / exposed failure categories`; preserved-cause and recovery evidence. |
-| Names and Contracts | Can developers find ownership and understand intent without reconstructing it? | Conflicting-term count; undocumented public contracts or invariants; optional time-to-locate or comprehension probe, with sample size disclosed. |
-| Conventions and Scope | Does the change follow established patterns and avoid speculative or unrelated work? | Unexplained convention deviations; directly related changed-hunk ratio; speculative abstractions without a current consumer; unrelated cleanup count. |
-| Performance Evidence | Was optimization driven and verified by measurement? | Baseline and post-change benchmark presence; throughput, p50/p95/p99 latency, CPU, memory, allocation, or I/O deltas relevant to the stated goal; regression checks. |
+Do not force irrelevant metrics.
 
-Do not force every metric onto every assessment. Use `N/A` when a principle truly does not apply and `Unknown` when it applies but evidence is insufficient.
+### 4. Score
 
-### 4. Score with evidence
+Score every applicable principle:
 
-Score each applicable principle from `0` to `3`:
+* `0 — Violated`: material design problem
+* `1 — Weak`: works, but complexity/change cost is materially high
+* `2 — Acceptable`: ownership and boundaries are clear enough
+* `3 — Strong`: complexity is well hidden and changes remain localized
 
-- `0 — Violated`: evidence shows a clear violation with material system impact.
-- `1 — Weak`: behavior works, but ownership, interface burden, duplication, or change cost is materially poor.
-- `2 — Acceptable`: responsibility and ownership are clear enough, burden is controlled, and relevant behavior is verified.
-- `3 — Strong`: complexity is well hidden, changes are isolated, and multiple evidence types confirm the result.
+Responsibility drift cannot receive `3`; material unreviewed drift must score below `2`.
 
-Keep confidence separate from score:
+Confidence:
 
-- `High`: direct code plus history, test, or runtime evidence.
-- `Medium`: direct code evidence but limited historical or runtime confirmation.
-- `Low`: partial sampling or mostly inference.
+* `High`: code + test/history/runtime evidence
+* `Medium`: direct code evidence
+* `Low`: sampling or inference
 
-Calculate the overall score only from numeric principle scores and always show evidence coverage:
+Calculate:
 
 ```text
-Overall score = sum(applicable numeric scores) / count(numeric scores)
-Evidence coverage = count(numeric scores) / count(applicable principles)
+Overall = sum(scores) / numeric principles
+Evidence coverage = numeric principles / applicable principles
 ```
 
-Do not let an average hide a critical violation. When a pass/fail decision is requested and no project policy exists, use this default gate:
+Default gate when pass/fail is required:
 
-- no principle scores `0`;
-- Single Responsibility, Single Knowledge Owner, and Valid States and Failures score at least `2` when applicable;
-- overall score is at least `2.2/3`;
-- evidence coverage is at least `80%`.
+* no score `0`
+* Single Responsibility ≥ `2`
+* Single Knowledge Owner ≥ `2`
+* Valid States & Failures ≥ `2`
+* no unresolved responsibility drift
+* overall ≥ `2.2 / 3`
+* evidence coverage ≥ `80%`
 
-Otherwise, report the score profile without declaring pass or fail.
+`Unknown` never passes a required gate.
 
-### 5. Interpret and recommend
+## Recommendations
 
-- Trace symptoms to knowledge ownership, responsibility, or boundary causes.
-- Rank findings by system-wide change cost, cognitive load, failure risk, then remediation effort.
-- Recommend the smallest coherent improvement; avoid speculative frameworks and unrelated rewrites.
-- Define an observable validation criterion for every recommendation.
-- For before-after analysis, reuse the same scope, scenarios, formulas, and evidence classes. Explain any unavoidable measurement change.
-- Calibrate future targets from the first baseline and repository trend; do not present default thresholds as scientific laws.
+For each finding:
 
-## Required report format
+1. state the observed problem
+2. cite evidence
+3. explain system impact
+4. recommend the smallest coherent change
+5. define one observable validation criterion
 
-Produce a self-contained report with these sections:
+Rank findings by:
+
+1. failure risk
+2. change amplification
+3. cognitive load
+4. remediation cost
+
+## Required Output
 
 ```markdown
 # Software Simplicity Assessment
 
-## Executive Summary
-- Scope and assessment type
-- Overall score and evidence coverage
-- Gate result, only when requested
-- Top strengths and risks
-
-## Scope and Method
-- Revision/time window, paths, exclusions, scenarios, sampling, and limitations
+## Summary
+- Scope:
+- Overall: X/3
+- Evidence coverage: X%
+- Gate: PASS | FAIL | Not requested
 
 ## Scorecard
 | Principle | Score | Measured values | Evidence | Confidence | Finding |
 
-## Change Scenario Results
-| Scenario | Files | Modules | Duplicated rules | Caller burden | Notes |
+## Scenario Results
+| Scenario | Files changed | Modules changed | Duplicate rules | Caller burden |
 
-## Findings and Recommendations
-### [Priority] Finding title
-- Observation
-- Evidence
-- System impact
-- Smallest recommendation
-- Validation criterion
+## Findings
+### [Priority] Finding
+- Evidence:
+- Impact:
+- Recommendation:
+- Validation:
 
-## Performance Evidence
-- Baseline, post-change result, deltas, or `N/A` with reason
-
-## Validation and Limitations
-- Commands, tests, analyses, missing evidence, sampled areas, and residual uncertainty
+## Limitations
+- Missing evidence:
+- Sampling:
+- Residual uncertainty:
 ```
 
-Omit empty optional sections, but never omit scope, scorecard, evidence, or limitations. Use exact measured values beside scores so readers can challenge the judgment. Never claim improvement or compliance without comparable evidence.
+Never report a score without measured values and evidence beside it.
